@@ -1,4 +1,4 @@
-﻿
+
 namespace WowClientDB2MySQLTableGenerator
 {
     public sealed class CStructureMemberInfo

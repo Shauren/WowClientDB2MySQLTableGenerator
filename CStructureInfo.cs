@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -37,8 +38,15 @@ namespace WowClientDB2MySQLTableGenerator
                     var m2 = new CStructureMemberInfo()
                     {
                         TypeName = m.TypeName,
-                        Name = m.Name.Replace("_lang", "").Replace("_loc", "") + "_lang"
+                        Name = m.Name.Replace("_lang", "").Replace("_loc", "")
                     };
+
+                    var indexOfArray = m.Name.LastIndexOf('[');
+                    if (indexOfArray != -1)
+                        m2.Name = m2.Name.Insert(indexOfArray, "_lang");
+                    else
+                        m2.Name += "_lang";
+
                     return m2;
                 }).ToList();
 
