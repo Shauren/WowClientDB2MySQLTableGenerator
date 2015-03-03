@@ -27,7 +27,7 @@ namespace WowClientDB2MySQLTableGenerator
         {
             _parser = new HeaderParser("DB2Structure.h");
             _parser.Parse();
-            using (var output = new StreamWriter("2015_02_22_00_hotfixes.sql"))
+            using (var output = new StreamWriter(String.Format("{0}_00_hotfixes.sql", DateTime.Now.ToString("yyyy_MM_dd"))))
             {
                 foreach (var structure in _parser.Structures)
                     DumpStructure(output, structure);
