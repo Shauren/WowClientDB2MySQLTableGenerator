@@ -46,6 +46,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="CStructureInfo.cs" />
+    <Compile Include="LimitedLineLengthStringBuilder.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

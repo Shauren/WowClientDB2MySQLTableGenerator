@@ -28,13 +28,83 @@ namespace WowClientDB2MySQLTableGenerator
             _parser = new HeaderParser("DB2Structure.h");
             _parser.Parse();
             using (var output = new StreamWriter(String.Format("{0}_00_hotfixes.sql", DateTime.Now.ToString("yyyy_MM_dd"))))
+            using (var hotfixesCpp = new StreamWriter(String.Format("{0}_HotfixDatabase.cpp", DateTime.Now.ToString("yyyy_MM_dd"))))
+            using (var hotfixesH = new StreamWriter(String.Format("{0}_HotfixDatabase.h", DateTime.Now.ToString("yyyy_MM_dd"))))
             {
+                WriteLicense(hotfixesCpp);
+                hotfixesCpp.WriteLine("#include \"HotfixDatabase.h\"");
+                hotfixesCpp.WriteLine();
+                hotfixesCpp.WriteLine("// Force locale statments to appear exactly in locale declaration order, right after normal data fetch statement");
+                hotfixesCpp.WriteLine("#define PREPARE_LOCALE_STMT(stmtBase, sql, con) \\");
+                hotfixesCpp.WriteLine("    static_assert(stmtBase + 1 == stmtBase##_LOCALE, \"Invalid prepared statement index for \" #stmtBase \"_LOCALE\"); \\");
+                hotfixesCpp.WriteLine("    PrepareStatement(stmtBase##_LOCALE, sql, con);");
+                hotfixesCpp.WriteLine();
+                hotfixesCpp.WriteLine("void HotfixDatabaseConnection::DoPrepareStatements()");
+                hotfixesCpp.WriteLine("{");
+                hotfixesCpp.WriteLine("    if (!m_reconnecting)");
+                hotfixesCpp.WriteLine("        m_stmts.resize(MAX_HOTFIXDATABASE_STATEMENTS);");
+
+                WriteLicense(hotfixesH);
+                hotfixesH.WriteLine("#ifndef _HOTFIXDATABASE_H");
+                hotfixesH.WriteLine("#define _HOTFIXDATABASE_H");
+                hotfixesH.WriteLine("");
+                hotfixesH.WriteLine("#include \"DatabaseWorkerPool.h\"");
+                hotfixesH.WriteLine("#include \"MySQLConnection.h\"");
+                hotfixesH.WriteLine("");
+                hotfixesH.WriteLine("class HotfixDatabaseConnection : public MySQLConnection");
+                hotfixesH.WriteLine("{");
+                hotfixesH.WriteLine("    public:");
+                hotfixesH.WriteLine("        //- Constructors for sync and async connections");
+                hotfixesH.WriteLine("        HotfixDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo) { }");
+                hotfixesH.WriteLine("        HotfixDatabaseConnection(ProducerConsumerQueue<SQLOperation*>* q, MySQLConnectionInfo& connInfo) : MySQLConnection(q, connInfo) { }");
+                hotfixesH.WriteLine("");
+                hotfixesH.WriteLine("        //- Loads database type specific prepared statements");
+                hotfixesH.WriteLine("        void DoPrepareStatements() override;");
+                hotfixesH.WriteLine("};");
+                hotfixesH.WriteLine("");
+                hotfixesH.WriteLine("typedef DatabaseWorkerPool<HotfixDatabaseConnection> HotfixDatabaseWorkerPool;");
+                hotfixesH.WriteLine("");
+                hotfixesH.WriteLine("enum HotfixDatabaseStatements");
+                hotfixesH.WriteLine("{");
+                hotfixesH.WriteLine("    /*  Naming standard for defines:");
+                hotfixesH.WriteLine("        {DB}_{SEL/INS/UPD/DEL/REP}_{Summary of data changed}");
+                hotfixesH.WriteLine("        When updating more than one field, consider looking at the calling function");
+                hotfixesH.WriteLine("        name for a suiting suffix.");
+                hotfixesH.WriteLine("    */");
+
                 foreach (var structure in _parser.Structures)
-                    DumpStructure(output, structure);
+                    DumpStructure(output, hotfixesCpp, hotfixesH, structure);
+
+                hotfixesCpp.WriteLine("}");
+
+                hotfixesH.WriteLine("};");
+                hotfixesH.WriteLine();
+                hotfixesH.WriteLine("#endif");
             }
         }
 
-        private static void DumpStructure(StreamWriter output, CStructureInfo structure)
+        private static void WriteLicense(StreamWriter stream)
+        {
+            stream.WriteLine("/*");
+            stream.WriteLine(String.Format(" * Copyright (C) 2008-{0} TrinityCore <http://www.trinitycore.org/>", DateTime.Now.ToString("yyyy")));
+            stream.WriteLine(" *");
+            stream.WriteLine(" * This program is free software; you can redistribute it and/or modify it");
+            stream.WriteLine(" * under the terms of the GNU General Public License as published by the");
+            stream.WriteLine(" * Free Software Foundation; either version 2 of the License, or (at your");
+            stream.WriteLine(" * option) any later version.");
+            stream.WriteLine(" *");
+            stream.WriteLine(" * This program is distributed in the hope that it will be useful, but WITHOUT");
+            stream.WriteLine(" * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or");
+            stream.WriteLine(" * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for");
+            stream.WriteLine(" * more details.");
+            stream.WriteLine(" *");
+            stream.WriteLine(" * You should have received a copy of the GNU General Public License along");
+            stream.WriteLine(" * with this program. If not, see <http://www.gnu.org/licenses/>.");
+            stream.WriteLine(" */");
+            stream.WriteLine();
+        }
+
+        private static void DumpStructure(StreamWriter output, StreamWriter hotfixesCpp, StreamWriter hotfixesH, CStructureInfo structure)
         {
             output.WriteLine("--");
             output.WriteLine("-- Table structure for table `" + structure.GetTableName() + "`");
@@ -44,13 +114,40 @@ namespace WowClientDB2MySQLTableGenerator
             output.WriteLine("/*!40101 SET @saved_cs_client     = @@character_set_client */;");
             output.WriteLine("/*!40101 SET character_set_client = utf8 */;");
             output.WriteLine("CREATE TABLE `" + structure.GetTableName() + "` (");
-            foreach (var member in structure.Members)
-                DumpStructureMember(output, member);
+
+            var cppBuilder = new LimitedLineLengthStringBuilder()
+            {
+                WrappedLinePrefix = "        \""
+            };
 
             if (!structure.Name.Contains("Locale"))
-                output.WriteLine(String.Format("  PRIMARY KEY (`{0}`)", structure.Members.First().Name));
+            {
+                cppBuilder.AppendLine();
+                cppBuilder.AppendFormatLine("    // {0}.db2", structure.Name);
+                cppBuilder.Append("    PrepareStatement(HOTFIX_SEL_");
+                hotfixesH.WriteLine();
+            }
             else
+                cppBuilder.Append("    PREPARE_LOCALE_STMT(HOTFIX_SEL_");
+
+            cppBuilder.Append(String.Format("{0}, \"SELECT ", structure.GetTableName().ToUpperInvariant().Replace("_LOCALE", "")));
+
+            foreach (var member in structure.Members)
+                DumpStructureMember(output, cppBuilder, member);
+
+            cppBuilder.Remove(cppBuilder.Length - 2, 2);
+            cppBuilder.Append(String.Format(" FROM {0}", structure.GetTableName()));
+
+            if (!structure.Name.Contains("Locale"))
+            {
+                output.WriteLine(String.Format("  PRIMARY KEY (`{0}`)", structure.Members.First().Name));
+                cppBuilder.Append(String.Format(" ORDER BY {0} DESC", structure.Members.First().Name));
+            }
+            else
+            {
+                cppBuilder.Append(" WHERE locale = ?");
                 output.WriteLine(String.Format("  PRIMARY KEY (`{0}`,`locale`)", structure.Members.First().Name));
+            }
 
             output.WriteLine(") ENGINE=MyISAM DEFAULT CHARSET=utf8;");
             output.WriteLine("/*!40101 SET character_set_client = @saved_cs_client */;");
@@ -64,9 +161,13 @@ namespace WowClientDB2MySQLTableGenerator
             output.WriteLine("/*!40000 ALTER TABLE `" + structure.GetTableName() + "` ENABLE KEYS */;");
             output.WriteLine("UNLOCK TABLES;");
             output.WriteLine();
+
+            cppBuilder.Nonbreaking().Append("\", CONNECTION_SYNCH);");
+            hotfixesCpp.WriteLine(cppBuilder.Finalize());
+            hotfixesH.WriteLine(String.Format("    HOTFIX_SEL_{0}", structure.GetTableName().ToUpperInvariant()));
         }
 
-        private static void DumpStructureMember(StreamWriter output, CStructureMemberInfo member)
+        private static void DumpStructureMember(StreamWriter output, LimitedLineLengthStringBuilder query, CStructureMemberInfo member)
         {
             var arraySize = 1;
             var indexOfArray = member.Name.IndexOf('[');
@@ -99,20 +200,20 @@ namespace WowClientDB2MySQLTableGenerator
 
                 if (!typeInfo.Contains("ERROR"))
                 {
-                    output.WriteLine(String.Format("  `{0}` {1},", memberName, typeInfo));
+                    DumpStructureMemberName(output, query, memberName, typeInfo);
                 }
                 else
                 {
                     switch (member.TypeName)
                     {
                         case "DBCPosition3D":
-                            output.WriteLine(String.Format("  `{0}X` {1},", memberName, MySQLTypeMap["float"]));
-                            output.WriteLine(String.Format("  `{0}Y` {1},", memberName, MySQLTypeMap["float"]));
-                            output.WriteLine(String.Format("  `{0}Z` {1},", memberName, MySQLTypeMap["float"]));
+                            DumpStructureMemberName(output, query, memberName + "X", MySQLTypeMap["float"]);
+                            DumpStructureMemberName(output, query, memberName + "Y", MySQLTypeMap["float"]);
+                            DumpStructureMemberName(output, query, memberName + "Z", MySQLTypeMap["float"]);
                             break;
                         case "DBCPosition2D":
-                            output.WriteLine(String.Format("  `{0}X` {1},", memberName, MySQLTypeMap["float"]));
-                            output.WriteLine(String.Format("  `{0}Y` {1},", memberName, MySQLTypeMap["float"]));
+                            DumpStructureMemberName(output, query, memberName + "X", MySQLTypeMap["float"]);
+                            DumpStructureMemberName(output, query, memberName + "Y", MySQLTypeMap["float"]);
                             break;
                         default:
                             output.WriteLine(String.Format("  `{0}` {1},", memberName, "ERROR TYPE " + member.TypeName));
@@ -120,6 +221,13 @@ namespace WowClientDB2MySQLTableGenerator
                     }
                 }
             }
+        }
+
+        private static void DumpStructureMemberName(StreamWriter output, LimitedLineLengthStringBuilder query, string memberName, string typeName)
+        {
+            output.WriteLine(String.Format("  `{0}` {1},", memberName, typeName));
+            if (memberName != "VerifiedBuild")
+                query.AppendFormat("{0}, ", memberName);
         }
     }
 }
