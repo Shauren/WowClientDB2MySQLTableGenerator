@@ -199,7 +199,13 @@ namespace WowClientDB2MySQLTableGenerator
                     memberName = member.Name.Substring(0, indexOfArray);
 
                 if (arraySize > 1)
-                    memberName += (i + 1).ToString();
+                {
+                    var langPos = memberName.IndexOf("_lang");
+                    if (langPos == -1)
+                        memberName += (i + 1).ToString();
+                    else
+                        memberName = memberName.Insert(langPos, (i + 1).ToString());
+                }
 
                 if (!typeInfo.Contains("ERROR"))
                 {
@@ -243,6 +249,9 @@ namespace WowClientDB2MySQLTableGenerator
             switch (str.ToUpperInvariant())
             {
                 case "INDEX":
+                case "TRIGGER":
+                case "FROM":
+                case "TO":
                     return true;
             }
 
