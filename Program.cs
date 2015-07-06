@@ -77,6 +77,8 @@ namespace WowClientDB2MySQLTableGenerator
 
                 hotfixesCpp.WriteLine("}");
 
+                hotfixesH.WriteLine();
+                hotfixesH.WriteLine("    MAX_HOTFIXDATABASE_STATEMENTS");
                 hotfixesH.WriteLine("};");
                 hotfixesH.WriteLine();
                 hotfixesH.WriteLine("#endif");
@@ -117,7 +119,8 @@ namespace WowClientDB2MySQLTableGenerator
 
             var cppBuilder = new LimitedLineLengthStringBuilder()
             {
-                WrappedLinePrefix = "        \""
+                WrappedLinePrefix = "        \"",
+                WrappedLineSuffix = "\""
             };
 
             if (!structure.Name.Contains("Locale"))
@@ -164,7 +167,7 @@ namespace WowClientDB2MySQLTableGenerator
 
             cppBuilder.Nonbreaking().Append("\", CONNECTION_SYNCH);");
             hotfixesCpp.WriteLine(cppBuilder.Finalize());
-            hotfixesH.WriteLine(String.Format("    HOTFIX_SEL_{0}", structure.GetTableName().ToUpperInvariant()));
+            hotfixesH.WriteLine(String.Format("    HOTFIX_SEL_{0},", structure.GetTableName().ToUpperInvariant()));
         }
 
         private static void DumpStructureMember(StreamWriter output, LimitedLineLengthStringBuilder query, CStructureMemberInfo member)
@@ -226,8 +229,24 @@ namespace WowClientDB2MySQLTableGenerator
         private static void DumpStructureMemberName(StreamWriter output, LimitedLineLengthStringBuilder query, string memberName, string typeName)
         {
             output.WriteLine(String.Format("  `{0}` {1},", memberName, typeName));
-            if (memberName != "VerifiedBuild")
-                query.AppendFormat("{0}, ", memberName);
+            if (memberName != "VerifiedBuild" && memberName != "locale")
+            {
+                if (!memberName.IsSqlKeyword())
+                    query.AppendFormat("{0}, ", memberName);
+                else
+                    query.AppendFormat("`{0}`, ", memberName);
+            }
+        }
+
+        private static bool IsSqlKeyword(this string str)
+        {
+            switch (str.ToUpperInvariant())
+            {
+                case "INDEX":
+                    return true;
+            }
+
+            return false;
         }
     }
 }

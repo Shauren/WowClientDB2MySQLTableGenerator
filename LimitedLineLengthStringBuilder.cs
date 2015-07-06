@@ -15,6 +15,7 @@ namespace WowClientDB2MySQLTableGenerator
         private bool _ignoreLimit;
         public int LineLength { get; set; }
         public string WrappedLinePrefix = string.Empty;
+        public string WrappedLineSuffix = string.Empty;
 
         public LimitedLineLengthStringBuilder() : this(150)
         {
@@ -87,7 +88,8 @@ namespace WowClientDB2MySQLTableGenerator
         {
             if (_lineBuffer.Length + value.Length > LineLength)
             {
-                _builder.AppendLine(_lineBuffer.ToString());
+                _builder.Append(_lineBuffer.ToString());
+                _builder.AppendLine(WrappedLineSuffix);
                 _lineBuffer.Clear();
                 _lineBuffer.Append(WrappedLinePrefix);
             }
