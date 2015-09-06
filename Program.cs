@@ -21,7 +21,9 @@ namespace WowClientDB2MySQLTableGenerator
             { "float", "float NOT NULL DEFAULT '0'"},
             { "LocalizedString*", "text" },
             { "char*", "text" },
-            { "char[4]", "varchar(4) NOT NULL"}
+            { "char[4]", "varchar(4) NOT NULL"},
+            { "uint64", "int(20) unsigned NOT NULL DEFAULT '0'" },
+            { "int64", "bigint(20) NOT NULL DEFAULT '0'" }
         };
 
         public static void Main(string[] args)
