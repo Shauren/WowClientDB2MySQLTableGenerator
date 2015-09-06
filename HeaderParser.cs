@@ -53,6 +53,8 @@ namespace WowClientDB2MySQLTableGenerator
                 if (comment != -1)
                     line = line.Substring(0, comment);
 
+                line = line.Replace(" const", "");
+
                 if (!line.Contains('('))
                 {
                     var tokens = line.Split(' ', ';', '/').Where(t => t.Length != 0).ToArray();

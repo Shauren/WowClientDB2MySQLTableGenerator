@@ -20,6 +20,7 @@ namespace WowClientDB2MySQLTableGenerator
             { "int8", "tinyint(4) NOT NULL DEFAULT '0'" },
             { "float", "float NOT NULL DEFAULT '0'"},
             { "LocalizedString*", "text" },
+            { "char*", "text" },
             { "char[4]", "varchar(4) NOT NULL"}
         };
 
@@ -51,19 +52,6 @@ namespace WowClientDB2MySQLTableGenerator
                 hotfixesH.WriteLine("#include \"DatabaseWorkerPool.h\"");
                 hotfixesH.WriteLine("#include \"MySQLConnection.h\"");
                 hotfixesH.WriteLine("");
-                hotfixesH.WriteLine("class HotfixDatabaseConnection : public MySQLConnection");
-                hotfixesH.WriteLine("{");
-                hotfixesH.WriteLine("    public:");
-                hotfixesH.WriteLine("        //- Constructors for sync and async connections");
-                hotfixesH.WriteLine("        HotfixDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo) { }");
-                hotfixesH.WriteLine("        HotfixDatabaseConnection(ProducerConsumerQueue<SQLOperation*>* q, MySQLConnectionInfo& connInfo) : MySQLConnection(q, connInfo) { }");
-                hotfixesH.WriteLine("");
-                hotfixesH.WriteLine("        //- Loads database type specific prepared statements");
-                hotfixesH.WriteLine("        void DoPrepareStatements() override;");
-                hotfixesH.WriteLine("};");
-                hotfixesH.WriteLine("");
-                hotfixesH.WriteLine("typedef DatabaseWorkerPool<HotfixDatabaseConnection> HotfixDatabaseWorkerPool;");
-                hotfixesH.WriteLine("");
                 hotfixesH.WriteLine("enum HotfixDatabaseStatements");
                 hotfixesH.WriteLine("{");
                 hotfixesH.WriteLine("    /*  Naming standard for defines:");
@@ -77,10 +65,25 @@ namespace WowClientDB2MySQLTableGenerator
 
                 hotfixesCpp.WriteLine("}");
 
-                hotfixesH.WriteLine();
+                hotfixesH.WriteLine("");
                 hotfixesH.WriteLine("    MAX_HOTFIXDATABASE_STATEMENTS");
                 hotfixesH.WriteLine("};");
-                hotfixesH.WriteLine();
+                hotfixesH.WriteLine("");
+                hotfixesH.WriteLine("class HotfixDatabaseConnection : public MySQLConnection");
+                hotfixesH.WriteLine("{");
+                hotfixesH.WriteLine("public:");
+                hotfixesH.WriteLine("    typedef HotfixDatabaseStatements Statements;");
+                hotfixesH.WriteLine("");
+                hotfixesH.WriteLine("        //- Constructors for sync and async connections");
+                hotfixesH.WriteLine("        HotfixDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo) { }");
+                hotfixesH.WriteLine("        HotfixDatabaseConnection(ProducerConsumerQueue<SQLOperation*>* q, MySQLConnectionInfo& connInfo) : MySQLConnection(q, connInfo) { }");
+                hotfixesH.WriteLine("");
+                hotfixesH.WriteLine("        //- Loads database type specific prepared statements");
+                hotfixesH.WriteLine("        void DoPrepareStatements() override;");
+                hotfixesH.WriteLine("};");
+                hotfixesH.WriteLine("");
+                hotfixesH.WriteLine("typedef DatabaseWorkerPool<HotfixDatabaseConnection> HotfixDatabaseWorkerPool;");
+                hotfixesH.WriteLine("");
                 hotfixesH.WriteLine("#endif");
             }
         }
@@ -123,7 +126,7 @@ namespace WowClientDB2MySQLTableGenerator
                 WrappedLineSuffix = "\""
             };
 
-            if (!structure.Name.Contains("Locale"))
+            if (!structure.IsLocale)
             {
                 cppBuilder.AppendLine();
                 cppBuilder.AppendFormatLine("    // {0}.db2", structure.Name);
@@ -141,7 +144,7 @@ namespace WowClientDB2MySQLTableGenerator
             cppBuilder.Remove(cppBuilder.Length - 2, 2);
             cppBuilder.Append(String.Format(" FROM {0}", structure.GetTableName()));
 
-            if (!structure.Name.Contains("Locale"))
+            if (!structure.IsLocale)
             {
                 output.WriteLine(String.Format("  PRIMARY KEY (`{0}`)", structure.Members.First().Name));
                 cppBuilder.Append(String.Format(" ORDER BY {0} DESC", structure.Members.First().Name));

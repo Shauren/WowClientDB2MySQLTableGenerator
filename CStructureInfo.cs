@@ -9,6 +9,7 @@ namespace WowClientDB2MySQLTableGenerator
     {
         public string Name { get; set; }
         public List<CStructureMemberInfo> Members { get; set; }
+        public bool IsLocale { get; set; }
 
         public override string ToString()
         {
@@ -68,6 +69,7 @@ namespace WowClientDB2MySQLTableGenerator
             var localeStruct = new CStructureInfo();
             localeStruct.Name = Name + "Locale";
             localeStruct.Members = stringFields;
+            localeStruct.IsLocale = true;
             return localeStruct;
         }
     }
