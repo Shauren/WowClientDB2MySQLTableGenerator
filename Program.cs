@@ -76,12 +76,12 @@ namespace WowClientDB2MySQLTableGenerator
                 hotfixesH.WriteLine("public:");
                 hotfixesH.WriteLine("    typedef HotfixDatabaseStatements Statements;");
                 hotfixesH.WriteLine("");
-                hotfixesH.WriteLine("        //- Constructors for sync and async connections");
-                hotfixesH.WriteLine("        HotfixDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo) { }");
-                hotfixesH.WriteLine("        HotfixDatabaseConnection(ProducerConsumerQueue<SQLOperation*>* q, MySQLConnectionInfo& connInfo) : MySQLConnection(q, connInfo) { }");
+                hotfixesH.WriteLine("    //- Constructors for sync and async connections");
+                hotfixesH.WriteLine("    HotfixDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo) { }");
+                hotfixesH.WriteLine("    HotfixDatabaseConnection(ProducerConsumerQueue<SQLOperation*>* q, MySQLConnectionInfo& connInfo) : MySQLConnection(q, connInfo) { }");
                 hotfixesH.WriteLine("");
-                hotfixesH.WriteLine("        //- Loads database type specific prepared statements");
-                hotfixesH.WriteLine("        void DoPrepareStatements() override;");
+                hotfixesH.WriteLine("    //- Loads database type specific prepared statements");
+                hotfixesH.WriteLine("    void DoPrepareStatements() override;");
                 hotfixesH.WriteLine("};");
                 hotfixesH.WriteLine("");
                 hotfixesH.WriteLine("typedef DatabaseWorkerPool<HotfixDatabaseConnection> HotfixDatabaseWorkerPool;");
