@@ -1,15 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
+using System.Linq;
 
 namespace WowClientDB2MySQLTableGenerator
 {
     public sealed class HeaderParser
     {
-        public HeaderParser(String path)
+        public HeaderParser(string path)
         {
             _stream = new StreamReader(path);
             Structures = new List<CStructureInfo>();
@@ -43,6 +41,7 @@ namespace WowClientDB2MySQLTableGenerator
         {
             var structure = new CStructureInfo();
             structure.Name = name.Replace("Entry", "");
+            structure.Name = structure.Name.Replace("GameObject", "Gameobject");
             structure.Members = new List<CStructureMemberInfo>();
             _stream.ReadLine();
             var line = _stream.ReadLine();
@@ -91,7 +90,7 @@ namespace WowClientDB2MySQLTableGenerator
             {
                 int value;
                 if (int.TryParse(tokens[2], out value))
-                    ArraySizes.Add(String.Format("[{0}]", tokens[1]), value);
+                    ArraySizes.Add(string.Format("[{0}]", tokens[1]), value);
             }
         }
     }
