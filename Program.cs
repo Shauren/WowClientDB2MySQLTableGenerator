@@ -143,7 +143,10 @@ namespace WowClientDB2MySQLTableGenerator
                 DumpStructureMember(output, cppBuilder, member);
 
             cppBuilder.Remove(cppBuilder.Length - 2, 2);
-            cppBuilder.Append(string.Format(" FROM {0}", structure.GetTableName()));
+            if (!structure.GetTableName().IsSqlKeyword())
+                cppBuilder.Append(string.Format(" FROM {0}", structure.GetTableName()));
+            else
+                cppBuilder.Append(string.Format(" FROM `{0}`", structure.GetTableName()));
 
             if (!structure.IsLocale)
             {
@@ -256,6 +259,7 @@ namespace WowClientDB2MySQLTableGenerator
                 case "TRIGGER":
                 case "FROM":
                 case "TO":
+                case "LOCK":
                     return true;
             }
 

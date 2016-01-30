@@ -42,6 +42,8 @@ namespace WowClientDB2MySQLTableGenerator
             var structure = new CStructureInfo();
             structure.Name = name.Replace("Entry", "");
             structure.Name = structure.Name.Replace("GameObject", "Gameobject");
+            structure.Name = structure.Name.Replace("PvP", "Pvp");
+            structure.Name = structure.Name.Replace("QuestXP", "QuestXp");
             structure.Members = new List<CStructureMemberInfo>();
             _stream.ReadLine();
             var line = _stream.ReadLine();
