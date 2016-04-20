@@ -1,99 +1,140 @@
+using ClangSharp;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace WowClientDB2MySQLTableGenerator
 {
     public sealed class HeaderParser
     {
-        public HeaderParser(string path)
-        {
-            _stream = new StreamReader(path);
-            Structures = new List<CStructureInfo>();
-            ArraySizes = new Dictionary<string, int>();
-        }
+        [DllImport("libclang.dll", EntryPoint = "clang_parseTranslationUnit2", CallingConvention = CallingConvention.Cdecl)]
+        public static extern CXErrorCode parseTranslationUnit2(CXIndex @CIdx,
+            [MarshalAs(UnmanagedType.LPStr)] string @source_filename,
+            string[] @command_line_args,
+            int @num_command_line_args,
+            [MarshalAs(UnmanagedType.LPArray)] CXUnsavedFile[] @unsaved_files,
+            uint @num_unsaved_files,
+            uint @options,
+            out CXTranslationUnit @out_TU);
 
-        private StreamReader _stream;
+        public string FileName { get; set; }
+        public List<CStructureInfo> Structures { get; set; } = new List<CStructureInfo>();
 
-        public List<CStructureInfo> Structures { get; set; }
-
-        public Dictionary<string, int> ArraySizes { get; set; }
+        private StringBuilder CommonTypes = new StringBuilder()
+            .AppendLine("#include <stdint.h>")
+            .AppendLine("typedef int64_t int64;")
+            .AppendLine("typedef int32_t int32;")
+            .AppendLine("typedef int16_t int16;")
+            .AppendLine("typedef int8_t int8;")
+            .AppendLine("typedef uint64_t uint64;")
+            .AppendLine("typedef uint32_t uint32;")
+            .AppendLine("typedef uint16_t uint16;")
+            .AppendLine("typedef uint8_t uint8;")
+            .AppendLine("struct LocalizedString;")
+            .AppendLine("struct DBCPosition2D { float X, Y; };")
+            .AppendLine("struct DBCPosition3D { float X, Y, Z; };")
+            .AppendLine("struct flag128 { uint32 Parts[4]; };")
+            .AppendLine("typedef uint32 BattlegroundBracketId;");
 
         public void Parse()
         {
-            var line = _stream.ReadLine();
-            while (line != null)
+            var index = clang.createIndex(0, 1);
+            var args = new string[]
             {
-                var idxOf = line.IndexOf("struct");
-                if (idxOf != -1)
-                    ParseStructure(line.Substring(idxOf + 7));
+                "-x",
+                "c++"
+            };
 
-                idxOf = line.IndexOf("#define");
-                if (idxOf != -1)
-                    ParseDefine(line);
+            // prepare input file
+            // comment out existing includes
+            // append required typedefs
+            var hdr = CommonTypes.Append(File.ReadAllText(FileName).Replace("#include", "//#include")).ToString();
 
-                line = _stream.ReadLine();
-            }
-        }
-
-        public void ParseStructure(string name)
-        {
-            var structure = new CStructureInfo();
-            structure.Name = name.Replace("Entry", "");
-            structure.Name = structure.Name.Replace("GameObject", "Gameobject");
-            structure.Name = structure.Name.Replace("PvP", "Pvp");
-            structure.Name = structure.Name.Replace("QuestXP", "QuestXp");
-            structure.Members = new List<CStructureMemberInfo>();
-            _stream.ReadLine();
-            var line = _stream.ReadLine();
-            while (line != "};")
+            var unsavedFiles = new CXUnsavedFile[]
             {
-                line = line.Trim();
-                var comment = line.IndexOf("//");
-                if (comment != -1)
-                    line = line.Substring(0, comment);
-
-                line = line.Replace(" const", "");
-
-                if (!line.Contains('('))
+                new CXUnsavedFile()
                 {
-                    var tokens = line.Split(' ', ';', '/').Where(t => t.Length != 0).ToArray();
-                    if (tokens.Length >= 2)
-                    {
-                        var member = new CStructureMemberInfo();
-                        member.TypeName = tokens[0];
-                        member.Name = tokens[1].Replace("_lang", "").Replace("_loc", "");
-                        structure.Members.Add(member);
-                    }
+                    Contents = hdr,
+                    Filename = FileName,
+                    Length = hdr.Length
                 }
+            };
 
-                line = _stream.ReadLine();
-            }
+            CXTranslationUnit translationUnit;
+            var result = parseTranslationUnit2(index, FileName, args, args.Length, unsavedFiles, (uint)unsavedFiles.Length, (uint)CXTranslationUnit_Flags.CXTranslationUnit_SkipFunctionBodies, out translationUnit);
+            if (result != CXErrorCode.CXError_Success)
+                return;
 
-            if (name.Contains("Entry"))
-            {
-                structure.Members.Add(new CStructureMemberInfo()
-                {
-                    TypeName = "int16",
-                    Name = "VerifiedBuild"
-                });
-                Structures.Add(structure);
-                var localeStruct = structure.CreateLocaleTable();
-                if (localeStruct != null)
-                    Structures.Add(localeStruct);
-            }
+            clang.visitChildren(clang.getTranslationUnitCursor(translationUnit), VisitStruct, new CXClientData(IntPtr.Zero));
         }
 
-        public void ParseDefine(string line)
+        public CXChildVisitResult VisitStruct(CXCursor cursor, CXCursor parent, IntPtr data)
         {
-            var tokens = line.Split(' ').Where(t => t.Length != 0).ToArray();
-            if (tokens.Length >= 3)
+            if (clang.Location_isInSystemHeader(clang.getCursorLocation(cursor)) != 0)
+                return CXChildVisitResult.CXChildVisit_Continue;
+
+            if (clang.getCursorKind(cursor) != CXCursorKind.CXCursor_StructDecl)
+                return CXChildVisitResult.CXChildVisit_Continue;
+
+            if (!clang.getCursorSpelling(cursor).ToString().Contains("Entry"))
+                return CXChildVisitResult.CXChildVisit_Continue;
+
+            var structure = new CStructureInfo();
+            structure.Name = clang.getCursorSpelling(cursor).ToString().Replace("Entry", "")
+                .Replace("GameObject", "Gameobject")
+                .Replace("PvP", "Pvp")
+                .Replace("QuestXP", "QuestXp")
+                .Replace("WMO", "Wmo")
+                .Replace("AddOn", "Addon");
+
+            var handle = GCHandle.Alloc(structure);
+            clang.visitChildren(cursor, VisitField, new CXClientData(GCHandle.ToIntPtr(handle)));
+            handle.Free();
+
+            var id = structure.Members.Find(m => m.Name.Equals("ID"));
+            if (id == null)
             {
-                int value;
-                if (int.TryParse(tokens[2], out value))
-                    ArraySizes.Add(string.Format("[{0}]", tokens[1]), value);
+                structure.Members.Insert(0, new CStructureMemberInfo()
+                {
+                    TypeName = "uint32",
+                    Name = "ID"
+                });
             }
+
+            structure.Members.Add(new CStructureMemberInfo()
+            {
+                TypeName = "int16",
+                Name = "VerifiedBuild"
+            });
+
+            Structures.Add(structure);
+            var localeStruct = structure.CreateLocaleTable();
+            if (localeStruct != null)
+                Structures.Add(localeStruct);
+
+            return CXChildVisitResult.CXChildVisit_Continue;
+        }
+
+        public CXChildVisitResult VisitField(CXCursor cursor, CXCursor parent, IntPtr data)
+        {
+            if (clang.getCursorKind(cursor) != CXCursorKind.CXCursor_FieldDecl)
+                return CXChildVisitResult.CXChildVisit_Continue;
+
+            GCHandle handle = GCHandle.FromIntPtr(data);
+            var structure = (CStructureInfo)handle.Target;
+
+            var cxType = clang.getCursorType(cursor);
+            var arraySize = clang.getArraySize(cxType);
+            structure.Members.Add(new CStructureMemberInfo()
+            {
+                TypeName = clang.getTypeSpelling(arraySize != -1 ? clang.getArrayElementType(cxType) : cxType).ToString(),
+                Name = clang.getCursorSpelling(cursor).ToString().Replace("_lang", ""),
+                ArraySize = Math.Max(arraySize, 1L)
+            });
+
+            return CXChildVisitResult.CXChildVisit_Continue;
         }
     }
 }

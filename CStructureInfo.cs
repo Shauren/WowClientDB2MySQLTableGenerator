@@ -7,7 +7,7 @@ namespace WowClientDB2MySQLTableGenerator
     public sealed class CStructureInfo
     {
         public string Name { get; set; }
-        public List<CStructureMemberInfo> Members { get; set; }
+        public List<CStructureMemberInfo> Members { get; set; } = new List<CStructureMemberInfo>();
         public bool IsLocale { get; set; }
 
         public override string ToString()
@@ -32,7 +32,7 @@ namespace WowClientDB2MySQLTableGenerator
 
         public CStructureInfo CreateLocaleTable()
         {
-            var stringFields = Members.Where(m => m.TypeName == "LocalizedString*")
+            var stringFields = Members.Where(m => m.FormattedTypeName == "LocalizedString*")
                 .Select(m =>
                 {
                     var m2 = new CStructureMemberInfo()

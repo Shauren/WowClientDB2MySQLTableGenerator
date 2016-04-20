@@ -32,15 +32,9 @@ namespace WowClientDB2MySQLTableGenerator
 
         public LimitedLineLengthStringBuilder Append(string value)
         {
-            return AppendFormat(value);
-        }
-
-        public LimitedLineLengthStringBuilder AppendFormat(string value, params object[] args)
-        {
             if (_finalized)
                 throw new InvalidOperationException("Cannot append after finalizing.");
 
-            value = string.Format(value, args);
             if (!_ignoreLimit)
                 FlushIfNeeded(value);
 
@@ -56,15 +50,9 @@ namespace WowClientDB2MySQLTableGenerator
 
         public LimitedLineLengthStringBuilder AppendLine(string value)
         {
-            return AppendFormatLine(value);
-        }
-
-        public LimitedLineLengthStringBuilder AppendFormatLine(string value, params object[] args)
-        {
             if (_finalized)
                 throw new InvalidOperationException("Cannot append after finalizing.");
 
-            value = string.Format(value, args);
             if (!_ignoreLimit)
                 FlushIfNeeded(value);
 
