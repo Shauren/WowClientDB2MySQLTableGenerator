@@ -68,6 +68,9 @@ namespace WowClientDB2MySQLTableGenerator
                 return;
 
             clang.visitChildren(clang.getTranslationUnitCursor(translationUnit), VisitStruct, new CXClientData(IntPtr.Zero));
+
+            clang.disposeTranslationUnit(translationUnit);
+            clang.disposeIndex(index);
         }
 
         public CXChildVisitResult VisitStruct(CXCursor cursor, CXCursor parent, IntPtr data)

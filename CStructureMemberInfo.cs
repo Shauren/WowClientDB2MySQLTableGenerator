@@ -5,7 +5,7 @@ namespace WowClientDB2MySQLTableGenerator
     {
         public string TypeName { get; set; }
         public string Name { get; set; }
-        public long ArraySize { get; set; }
+        public long ArraySize { get; set; } = 1L;
 
         public string FormattedTypeName { get { return TypeName.Replace("const", "").Replace(" ", ""); } }
 
