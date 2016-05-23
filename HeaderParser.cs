@@ -35,7 +35,7 @@ namespace WowClientDB2MySQLTableGenerator
             .AppendLine("struct LocalizedString;")
             .AppendLine("struct DBCPosition2D { float X, Y; };")
             .AppendLine("struct DBCPosition3D { float X, Y, Z; };")
-            .AppendLine("struct flag128 { uint32 Parts[4]; };")
+            .AppendLine("typedef uint32 flag128[4];")
             .AppendLine("typedef uint32 BattlegroundBracketId;");
 
         public void Parse()
@@ -95,16 +95,6 @@ namespace WowClientDB2MySQLTableGenerator
             var handle = GCHandle.Alloc(structure);
             clang.visitChildren(cursor, VisitField, new CXClientData(GCHandle.ToIntPtr(handle)));
             handle.Free();
-
-            var id = structure.Members.Find(m => m.Name.Equals("ID"));
-            if (id == null)
-            {
-                structure.Members.Insert(0, new CStructureMemberInfo()
-                {
-                    TypeName = "uint32",
-                    Name = "ID"
-                });
-            }
 
             structure.Members.Add(new CStructureMemberInfo()
             {

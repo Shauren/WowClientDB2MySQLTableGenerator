@@ -38,7 +38,8 @@ namespace WowClientDB2MySQLTableGenerator
                     var m2 = new CStructureMemberInfo()
                     {
                         TypeName = m.TypeName,
-                        Name = m.Name.Replace("_lang", "").Replace("_loc", "")
+                        Name = m.Name.Replace("_lang", "").Replace("_loc", ""),
+                        ArraySize = m.ArraySize
                     };
 
                     var indexOfArray = m.Name.LastIndexOf('[');
@@ -53,7 +54,11 @@ namespace WowClientDB2MySQLTableGenerator
             if (stringFields.Count == 0)
                 return null;
 
-            stringFields.Insert(0, Members.First());
+            stringFields.Insert(0, new CStructureMemberInfo()
+            {
+                TypeName = "uint32",
+                Name = "ID"
+            });
             stringFields.Insert(1, new CStructureMemberInfo()
             {
                 TypeName = "char[4]",
