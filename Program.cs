@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace WowClientDB2MySQLTableGenerator
 {
@@ -153,13 +152,13 @@ namespace WowClientDB2MySQLTableGenerator
 
             if (!structure.IsLocale)
             {
-                output.WriteLine($"  PRIMARY KEY (`{structure.Members.First().Name}`)");
-                cppBuilder.Append($" ORDER BY {structure.Members.First().Name} DESC");
+                output.WriteLine($"  PRIMARY KEY (`ID`)");
+                cppBuilder.Append($" ORDER BY ID DESC");
             }
             else
             {
                 cppBuilder.Append(" WHERE locale = ?");
-                output.WriteLine($"  PRIMARY KEY (`{structure.Members.First().Name}`,`locale`)");
+                output.WriteLine($"  PRIMARY KEY (`ID`,`locale`)");
             }
 
             output.WriteLine(") ENGINE=MyISAM DEFAULT CHARSET=utf8;");
