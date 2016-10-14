@@ -85,7 +85,8 @@ namespace WowClientDB2MySQLTableGenerator
                 return CXChildVisitResult.CXChildVisit_Continue;
 
             var structure = new CStructureInfo();
-            structure.Name = clang.getCursorSpelling(cursor).ToString().Replace("Entry", "")
+            structure.Name = clang.getCursorSpelling(cursor).ToString();
+            structure.NormalizedName = structure.Name.Replace("Entry", "")
                 .Replace("GameObject", "Gameobject")
                 .Replace("PvP", "Pvp")
                 .Replace("QuestXP", "QuestXp")

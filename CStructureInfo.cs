@@ -7,20 +7,21 @@ namespace WowClientDB2MySQLTableGenerator
     public sealed class CStructureInfo
     {
         public string Name { get; set; }
+        public string NormalizedName { get; set; }
         public List<CStructureMemberInfo> Members { get; set; } = new List<CStructureMemberInfo>();
         public bool IsLocale { get; set; }
 
         public override string ToString()
         {
-            return "struct " + Name;
+            return "struct " + NormalizedName;
         }
 
         public string GetTableName()
         {
             var sb = new StringBuilder();
-            for (int i = 0; i < Name.Length; ++i)
+            for (int i = 0; i < NormalizedName.Length; ++i)
             {
-                char c = Name[i];
+                char c = NormalizedName[i];
                 if (char.IsUpper(c) && i > 0)
                     sb.Append('_');
 
@@ -71,7 +72,7 @@ namespace WowClientDB2MySQLTableGenerator
             });
 
             var localeStruct = new CStructureInfo();
-            localeStruct.Name = Name + "Locale";
+            localeStruct.NormalizedName = NormalizedName + "Locale";
             localeStruct.Members = stringFields;
             localeStruct.IsLocale = true;
             return localeStruct;
