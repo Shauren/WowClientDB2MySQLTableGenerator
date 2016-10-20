@@ -86,12 +86,16 @@ namespace WowClientDB2MySQLTableGenerator
 
             var structure = new CStructureInfo();
             structure.Name = clang.getCursorSpelling(cursor).ToString();
-            structure.NormalizedName = structure.Name.Replace("Entry", "")
+            structure.NormalizedName = structure.Name
                 .Replace("GameObject", "Gameobject")
                 .Replace("PvP", "Pvp")
                 .Replace("QuestXP", "QuestXp")
                 .Replace("WMO", "Wmo")
                 .Replace("AddOn", "Addon");
+
+            var suffixIndex = structure.NormalizedName.LastIndexOf("Entry");
+            if (suffixIndex != -1)
+                structure.NormalizedName = structure.NormalizedName.Remove(suffixIndex);
 
             var handle = GCHandle.Alloc(structure);
             clang.visitChildren(cursor, VisitField, new CXClientData(GCHandle.ToIntPtr(handle)));
