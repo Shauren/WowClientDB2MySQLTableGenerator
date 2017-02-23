@@ -113,7 +113,7 @@ namespace WowClientDB2MySQLTableGenerator
                 hotfixesH.WriteLine("");
                 hotfixesH.WriteLine("#endif");
 
-                infoH.WriteLine("#endif DB2LoadInfo_h__");
+                infoH.WriteLine("#endif // DB2LoadInfo_h__");
             }
         }
 
