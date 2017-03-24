@@ -83,7 +83,7 @@ namespace WowClientDB2MySQLTableGenerator
                 infoH.WriteLine("#ifndef DB2LoadInfo_h__");
                 infoH.WriteLine("#define DB2LoadInfo_h__");
                 infoH.WriteLine("");
-                infoH.WriteLine("#include \"DB2StorageLoader.h\"");
+                infoH.WriteLine("#include \"DB2DatabaseLoader.h\"");
                 infoH.WriteLine("#include \"DB2Metadata.h\"");
                 infoH.WriteLine("");
 
@@ -168,7 +168,7 @@ namespace WowClientDB2MySQLTableGenerator
                 hotfixesH.WriteLine();
                 infoH.WriteLine($"struct {structure.NormalizedName}LoadInfo");
                 infoH.WriteLine("{");
-                infoH.WriteLine("    static DB2LoadInfo Instance()");
+                infoH.WriteLine("    static DB2LoadInfo const* Instance()");
                 infoH.WriteLine("    {");
                 infoH.WriteLine($"        static DB2FieldMeta const fields[] =");
                 infoH.WriteLine("        {");
@@ -219,7 +219,8 @@ namespace WowClientDB2MySQLTableGenerator
             {
                 infoH.Write(infoBuilder.ToString());
                 infoH.WriteLine("        };");
-                infoH.WriteLine($"        return {{ &fields[0], std::extent<decltype(fields)>::value, {structure.Name.Replace("Entry", "")}Meta::Instance(), HOTFIX_SEL_{structure.GetTableName().ToUpperInvariant().Replace("_LOCALE", "")} }};");
+                infoH.WriteLine($"        static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, {structure.Name.Replace("Entry", "")}Meta::Instance(), HOTFIX_SEL_{structure.GetTableName().ToUpperInvariant().Replace("_LOCALE", "")});");
+                infoH.WriteLine("        return &loadInfo;");
                 infoH.WriteLine("    }");
                 infoH.WriteLine("};");
                 infoH.WriteLine();
