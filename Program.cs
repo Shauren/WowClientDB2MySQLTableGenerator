@@ -53,6 +53,7 @@ namespace WowClientDB2MySQLTableGenerator
             {
                 WriteLicense(hotfixesCpp);
                 hotfixesCpp.WriteLine("#include \"HotfixDatabase.h\"");
+                hotfixesCpp.WriteLine("#include \"PreparedStatement.h\"");
                 hotfixesCpp.WriteLine();
                 hotfixesCpp.WriteLine("// Force locale statments to appear exactly in locale declaration order, right after normal data fetch statement");
                 hotfixesCpp.WriteLine("#define PREPARE_LOCALE_STMT(stmtBase, sql, con) \\");
@@ -68,10 +69,9 @@ namespace WowClientDB2MySQLTableGenerator
                 hotfixesH.WriteLine("#ifndef _HOTFIXDATABASE_H");
                 hotfixesH.WriteLine("#define _HOTFIXDATABASE_H");
                 hotfixesH.WriteLine("");
-                hotfixesH.WriteLine("#include \"DatabaseWorkerPool.h\"");
                 hotfixesH.WriteLine("#include \"MySQLConnection.h\"");
                 hotfixesH.WriteLine("");
-                hotfixesH.WriteLine("enum HotfixDatabaseStatements");
+                hotfixesH.WriteLine("enum HotfixDatabaseStatements : uint32");
                 hotfixesH.WriteLine("{");
                 hotfixesH.WriteLine("    /*  Naming standard for defines:");
                 hotfixesH.WriteLine("        {DB}_{SEL/INS/UPD/DEL/REP}_{Summary of data changed}");
@@ -91,6 +91,19 @@ namespace WowClientDB2MySQLTableGenerator
                     DumpStructure(hotfixesSql, hotfixesCpp, hotfixesH, infoH, structure);
 
                 hotfixesCpp.WriteLine("}");
+                hotfixesCpp.WriteLine();
+                hotfixesCpp.WriteLine("HotfixDatabaseConnection::HotfixDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo)");
+                hotfixesCpp.WriteLine("{");
+                hotfixesCpp.WriteLine("}");
+                hotfixesCpp.WriteLine();
+                hotfixesCpp.WriteLine("HotfixDatabaseConnection::HotfixDatabaseConnection(ProducerConsumerQueue<SQLOperation*>* q, MySQLConnectionInfo& connInfo) : MySQLConnection(q, connInfo)");
+                hotfixesCpp.WriteLine("{");
+                hotfixesCpp.WriteLine("}");
+                hotfixesCpp.WriteLine();
+                hotfixesCpp.WriteLine("HotfixDatabaseConnection::~HotfixDatabaseConnection()");
+                hotfixesCpp.WriteLine("{");
+                hotfixesCpp.WriteLine("}");
+                hotfixesCpp.WriteLine("");
 
                 hotfixesH.WriteLine("");
                 hotfixesH.WriteLine("    MAX_HOTFIXDATABASE_STATEMENTS");
@@ -102,8 +115,9 @@ namespace WowClientDB2MySQLTableGenerator
                 hotfixesH.WriteLine("    typedef HotfixDatabaseStatements Statements;");
                 hotfixesH.WriteLine("");
                 hotfixesH.WriteLine("    //- Constructors for sync and async connections");
-                hotfixesH.WriteLine("    HotfixDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo) { }");
-                hotfixesH.WriteLine("    HotfixDatabaseConnection(ProducerConsumerQueue<SQLOperation*>* q, MySQLConnectionInfo& connInfo) : MySQLConnection(q, connInfo) { }");
+                hotfixesH.WriteLine("    HotfixDatabaseConnection(MySQLConnectionInfo& connInfo);");
+                hotfixesH.WriteLine("    HotfixDatabaseConnection(ProducerConsumerQueue<SQLOperation*>* q, MySQLConnectionInfo& connInfo);");
+                hotfixesH.WriteLine("    ~HotfixDatabaseConnection();");
                 hotfixesH.WriteLine("");
                 hotfixesH.WriteLine("    //- Loads database type specific prepared statements");
                 hotfixesH.WriteLine("    void DoPrepareStatements() override;");
