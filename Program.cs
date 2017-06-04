@@ -103,7 +103,6 @@ namespace WowClientDB2MySQLTableGenerator
                 hotfixesCpp.WriteLine("HotfixDatabaseConnection::~HotfixDatabaseConnection()");
                 hotfixesCpp.WriteLine("{");
                 hotfixesCpp.WriteLine("}");
-                hotfixesCpp.WriteLine("");
 
                 hotfixesH.WriteLine("");
                 hotfixesH.WriteLine("    MAX_HOTFIXDATABASE_STATEMENTS");
@@ -122,8 +121,6 @@ namespace WowClientDB2MySQLTableGenerator
                 hotfixesH.WriteLine("    //- Loads database type specific prepared statements");
                 hotfixesH.WriteLine("    void DoPrepareStatements() override;");
                 hotfixesH.WriteLine("};");
-                hotfixesH.WriteLine("");
-                hotfixesH.WriteLine("typedef DatabaseWorkerPool<HotfixDatabaseConnection> HotfixDatabaseWorkerPool;");
                 hotfixesH.WriteLine("");
                 hotfixesH.WriteLine("#endif");
 
