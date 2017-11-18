@@ -92,9 +92,11 @@ namespace WowClientDB2MySQLTableGenerator
             structure.NormalizedName = structure.Name
                 .Replace("GameObject", "Gameobject")
                 .Replace("PvP", "Pvp")
+                .Replace("PVP", "Pvp")
                 .Replace("QuestXP", "QuestXp")
                 .Replace("WMO", "Wmo")
-                .Replace("AddOn", "Addon");
+                .Replace("AddOn", "Addon")
+                .Replace("LFG", "Lfg");
 
             var suffixIndex = structure.NormalizedName.LastIndexOf("Entry");
             if (suffixIndex != -1)
