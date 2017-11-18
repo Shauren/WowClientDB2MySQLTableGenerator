@@ -325,6 +325,7 @@ namespace WowClientDB2MySQLTableGenerator
                 case "INT2":
                 case "INT3":
                 case "INT4":
+                case "ORDER":
                     return true;
             }
 
