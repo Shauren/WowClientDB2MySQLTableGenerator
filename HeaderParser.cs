@@ -37,7 +37,7 @@ namespace WowClientDB2MySQLTableGenerator
             .AppendLine("struct DBCPosition3D { float X, Y, Z; };")
             .AppendLine("typedef uint32 flag128[4];")
             .AppendLine("typedef uint32 BattlegroundBracketId;")
-            .AppendLine("#define MAX_ITEM_PROTO_FLAGS 3")
+            .AppendLine("#define MAX_ITEM_PROTO_FLAGS 4")
             .AppendLine("#define MAX_ITEM_PROTO_SOCKETS 3")
             .AppendLine("#define MAX_ITEM_PROTO_STATS 10");
 
