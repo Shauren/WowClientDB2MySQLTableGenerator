@@ -39,7 +39,9 @@ namespace WowClientDB2MySQLTableGenerator
             { "int8", "FT_BYTE" },
             { "float", "FT_FLOAT"},
             { "LocalizedString*", "FT_STRING" },
-            { "char*", "FT_STRING_NOT_LOCALIZED" }
+            { "char*", "FT_STRING_NOT_LOCALIZED" },
+            { "uint64", "FT_LONG" },
+            { "int64", "FT_LONG" }
         };
 
         public static void Main(string[] args)
@@ -131,7 +133,7 @@ namespace WowClientDB2MySQLTableGenerator
         private static void WriteLicense(StreamWriter stream)
         {
             stream.WriteLine("/*");
-            stream.WriteLine($" * Copyright (C) 2008-{DateTime.Now.ToString("yyyy")} TrinityCore <http://www.trinitycore.org/>");
+            stream.WriteLine($" * Copyright (C) 2008-{DateTime.Now.ToString("yyyy")} TrinityCore <https://www.trinitycore.org/>");
             stream.WriteLine(" *");
             stream.WriteLine(" * This program is free software; you can redistribute it and/or modify it");
             stream.WriteLine(" * under the terms of the GNU General Public License as published by the");
