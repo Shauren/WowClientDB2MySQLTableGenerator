@@ -35,7 +35,7 @@ namespace WowClientDB2MySQLTableGenerator
             .AppendLine("struct LocalizedString;")
             .AppendLine("struct DBCPosition2D { float X, Y; };")
             .AppendLine("struct DBCPosition3D { float X, Y, Z; };")
-            .AppendLine("typedef uint32 flag128[4];")
+            .AppendLine("typedef int32 flag128[4];")
             .AppendLine("typedef uint32 BattlegroundBracketId;")
             .AppendLine("#define MAX_ITEM_PROTO_FLAGS 4")
             .AppendLine("#define MAX_ITEM_PROTO_SOCKETS 3")
@@ -97,7 +97,8 @@ namespace WowClientDB2MySQLTableGenerator
                 .Replace("QuestXP", "QuestXp")
                 .Replace("WMO", "Wmo")
                 .Replace("AddOn", "Addon")
-                .Replace("LFG", "Lfg");
+                .Replace("LFG", "Lfg")
+                .Replace("_", "");
 
             var suffixIndex = structure.NormalizedName.LastIndexOf("Entry");
             if (suffixIndex != -1)

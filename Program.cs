@@ -13,7 +13,7 @@ namespace WowClientDB2MySQLTableGenerator
         private static readonly Dictionary<string, string> MySQLTypeMap = new Dictionary<string, string>()
         {
             { "uint32", "int(10) unsigned NOT NULL DEFAULT '0'" },
-            { "unionAssetNameAlias", "int(10) unsigned NOT NULL DEFAULT '0'" },
+            { "unionAssetNameAlias", "int(10) NOT NULL DEFAULT '0'" },
             { "int32", "int(11) NOT NULL DEFAULT '0'" },
             { "uint16", "smallint(5) unsigned NOT NULL DEFAULT '0'" },
             { "int16", "smallint(6) NOT NULL DEFAULT '0'" },
@@ -27,7 +27,7 @@ namespace WowClientDB2MySQLTableGenerator
             { "int64", "bigint(20) NOT NULL DEFAULT '0'" }
         };
 
-        private static readonly Regex SignedIntRegex = new Regex("^int[0-9]{1,2}$", RegexOptions.Compiled);
+        private static readonly Regex SignedIntRegex = new Regex("^(int[0-9]{1,2})|(unionAssetNameAlias)|(flag128)$", RegexOptions.Compiled);
         private static readonly Dictionary<string, string> DbcFormatEnumTypeMap = new Dictionary<string, string>()
         {
             { "uint32", "FT_INT" },
@@ -255,8 +255,8 @@ namespace WowClientDB2MySQLTableGenerator
             if (member.TypeName == "flag128")
             {
                 arraySize = 4;
-                typeInfo = MySQLTypeMap["uint32"];
-                @enum = DbcFormatEnumTypeMap["uint32"];
+                typeInfo = MySQLTypeMap["int32"];
+                @enum = DbcFormatEnumTypeMap["int32"];
             }
 
             for (var i = 0; i < arraySize; ++i)
