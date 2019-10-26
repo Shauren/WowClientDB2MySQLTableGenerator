@@ -38,6 +38,7 @@ namespace WowClientDB2MySQLTableGenerator
             .AppendLine("typedef int32 flag128[4];")
             .AppendLine("typedef uint32 BattlegroundBracketId;")
             .AppendLine("#define MAX_ITEM_PROTO_FLAGS 4")
+            .AppendLine("#define MAX_ITEM_PROTO_ZONES 2")
             .AppendLine("#define MAX_ITEM_PROTO_SOCKETS 3")
             .AppendLine("#define MAX_ITEM_PROTO_STATS 10")
             .AppendLine("#define MAX_SPELL_AURA_INTERRUPT_FLAGS 2");
