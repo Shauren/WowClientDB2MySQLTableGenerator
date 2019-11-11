@@ -55,7 +55,7 @@ namespace WowClientDB2MySQLTableGenerator
             {
                 WriteLicense(hotfixesCpp);
                 hotfixesCpp.WriteLine("#include \"HotfixDatabase.h\"");
-                hotfixesCpp.WriteLine("#include \"PreparedStatement.h\"");
+                hotfixesCpp.WriteLine("#include \"MySQLPreparedStatement.h\"");
                 hotfixesCpp.WriteLine();
                 hotfixesCpp.WriteLine("// Force locale statments to appear exactly in locale declaration order, right after normal data fetch statement");
                 hotfixesCpp.WriteLine("#define PREPARE_LOCALE_STMT(stmtBase, sql, con) \\");
@@ -328,6 +328,8 @@ namespace WowClientDB2MySQLTableGenerator
                 case "INT3":
                 case "INT4":
                 case "ORDER":
+                case "SYSTEM":
+                case "RANK":
                     return true;
             }
 
