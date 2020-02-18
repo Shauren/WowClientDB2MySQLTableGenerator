@@ -67,7 +67,7 @@ namespace WowClientDB2MySQLTableGenerator
             });
             stringFields.Add(new CStructureMemberInfo()
             {
-                TypeName = "int16",
+                TypeName = "int32",
                 Name = "VerifiedBuild"
             });
 
