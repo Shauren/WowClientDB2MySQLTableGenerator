@@ -133,7 +133,7 @@ namespace WowClientDB2MySQLTableGenerator
         private static void WriteLicense(StreamWriter stream)
         {
             stream.WriteLine("/*");
-            stream.WriteLine($" * Copyright (C) 2008-{DateTime.Now.ToString("yyyy")} TrinityCore <https://www.trinitycore.org/>");
+            stream.WriteLine($" * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information");
             stream.WriteLine(" *");
             stream.WriteLine(" * This program is free software; you can redistribute it and/or modify it");
             stream.WriteLine(" * under the terms of the GNU General Public License as published by the");
