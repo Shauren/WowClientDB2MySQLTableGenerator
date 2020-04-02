@@ -23,20 +23,20 @@ namespace WowClientDB2MySQLTableGenerator
         public List<CStructureInfo> Structures { get; set; } = new List<CStructureInfo>();
 
         private StringBuilder CommonTypes = new StringBuilder()
-            .AppendLine("#include <stdint.h>")
-            .AppendLine("typedef int64_t int64;")
-            .AppendLine("typedef int32_t int32;")
-            .AppendLine("typedef int16_t int16;")
-            .AppendLine("typedef int8_t int8;")
-            .AppendLine("typedef uint64_t uint64;")
-            .AppendLine("typedef uint32_t uint32;")
-            .AppendLine("typedef uint16_t uint16;")
-            .AppendLine("typedef uint8_t uint8;")
+            .AppendLine("struct int64 { };")
+            .AppendLine("struct int32 { };")
+            .AppendLine("struct int16 { };")
+            .AppendLine("struct int8 { };")
+            .AppendLine("struct uint64 { };")
+            .AppendLine("struct uint32 { };")
+            .AppendLine("struct uint16 { };")
+            .AppendLine("struct uint8 { };")
             .AppendLine("struct LocalizedString;")
             .AppendLine("struct DBCPosition2D { float X, Y; };")
             .AppendLine("struct DBCPosition3D { float X, Y, Z; };")
-            .AppendLine("typedef int32 flag128[4];")
-            .AppendLine("typedef uint32 BattlegroundBracketId;")
+            .AppendLine("namespace Trinity { template<typename T> struct RaceMask { }; }")
+            .AppendLine("using flag128 = int32[4];")
+            .AppendLine("using BattlegroundBracketId = uint32;")
             .AppendLine("#define MAX_ITEM_PROTO_FLAGS 4")
             .AppendLine("#define MAX_ITEM_PROTO_ZONES 2")
             .AppendLine("#define MAX_ITEM_PROTO_SOCKETS 3")
@@ -49,7 +49,8 @@ namespace WowClientDB2MySQLTableGenerator
             var args = new string[]
             {
                 "-x",
-                "c++"
+                "c++",
+                "--std=c++11"
             };
 
             // prepare input file
@@ -131,16 +132,29 @@ namespace WowClientDB2MySQLTableGenerator
             GCHandle handle = GCHandle.FromIntPtr(data);
             var structure = (CStructureInfo)handle.Target;
 
-            var cxType = clang.getCursorType(cursor);
-            var arraySize = clang.getArraySize(cxType);
+            var typeInfo = ExtractFieldType(cursor);
             structure.Members.Add(new CStructureMemberInfo()
             {
-                TypeName = clang.getTypeSpelling(arraySize != -1 ? clang.getArrayElementType(cxType) : cxType).ToString(),
+                TypeName = clang.getTypeSpelling(typeInfo.Type).ToString(),
                 Name = clang.getCursorSpelling(cursor).ToString().Replace("_lang", ""),
-                ArraySize = Math.Max(arraySize, 1L)
+                ArraySize = typeInfo.ArraySize
             });
 
             return CXChildVisitResult.CXChildVisit_Continue;
+        }
+
+        public (CXType Type, long ArraySize) ExtractFieldType(CXCursor cursor)
+        {
+            var cxType = clang.getCursorType(cursor);
+            var arraySize = clang.getArraySize(cxType);
+            if (arraySize > 1)
+                cxType = clang.getArrayElementType(cxType);
+
+            var templateArguments = clang.Type_getNumTemplateArguments(cxType);
+            if (templateArguments > 0)
+                cxType = clang.Type_getTemplateArgumentAsType(cxType, 0);
+
+            return (cxType, Math.Max(arraySize, 1L));
         }
     }
 }
