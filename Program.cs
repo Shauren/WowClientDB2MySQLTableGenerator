@@ -57,9 +57,14 @@ namespace WowClientDB2MySQLTableGenerator
                 hotfixesCpp.WriteLine("#include \"HotfixDatabase.h\"");
                 hotfixesCpp.WriteLine("#include \"MySQLPreparedStatement.h\"");
                 hotfixesCpp.WriteLine();
-                hotfixesCpp.WriteLine("// Force locale statments to appear exactly in locale declaration order, right after normal data fetch statement");
+                hotfixesCpp.WriteLine("// Force max id statements to appear exactly right after normal data fetch statement");
+                hotfixesCpp.WriteLine("#define PREPARE_MAX_ID_STMT(stmtBase, sql, con) \\");
+                hotfixesCpp.WriteLine("    static_assert(stmtBase + 1 == stmtBase##_MAX_ID, \"Invalid prepared statement index for \" #stmtBase \"_MAX_ID\"); \\");
+                hotfixesCpp.WriteLine("    PrepareStatement(stmtBase##_MAX_ID, sql, con);");
+                hotfixesCpp.WriteLine();
+                hotfixesCpp.WriteLine("// Force locale statements to be right after max id fetch statement");
                 hotfixesCpp.WriteLine("#define PREPARE_LOCALE_STMT(stmtBase, sql, con) \\");
-                hotfixesCpp.WriteLine("    static_assert(stmtBase + 1 == stmtBase##_LOCALE, \"Invalid prepared statement index for \" #stmtBase \"_LOCALE\"); \\");
+                hotfixesCpp.WriteLine("    static_assert(stmtBase + 2 == stmtBase##_LOCALE, \"Invalid prepared statement index for \" #stmtBase \"_LOCALE\"); \\");
                 hotfixesCpp.WriteLine("    PrepareStatement(stmtBase##_LOCALE, sql, con);");
                 hotfixesCpp.WriteLine();
                 hotfixesCpp.WriteLine("void HotfixDatabaseConnection::DoPrepareStatements()");
@@ -162,7 +167,7 @@ namespace WowClientDB2MySQLTableGenerator
             output.WriteLine();
             output.WriteLine($"DROP TABLE IF EXISTS `{structure.GetTableName()}`;");
             output.WriteLine("/*!40101 SET @saved_cs_client     = @@character_set_client */;");
-            output.WriteLine("/*!40101 SET character_set_client = utf8 */;");
+            output.WriteLine("/*!50503 SET character_set_client = utf8mb4 */;");
             output.WriteLine($"CREATE TABLE `{structure.GetTableName()}` (");
 
             var cppBuilder = new LimitedLineLengthStringBuilder()
@@ -201,17 +206,15 @@ namespace WowClientDB2MySQLTableGenerator
                 cppBuilder.Append($" FROM `{structure.GetTableName()}`");
 
             if (!structure.IsLocale)
-            {
                 output.WriteLine($"  PRIMARY KEY (`ID`)");
-                cppBuilder.Append($" ORDER BY ID DESC");
-            }
             else
             {
                 cppBuilder.Append(" WHERE locale = ?");
-                output.WriteLine($"  PRIMARY KEY (`ID`,`locale`)");
+                output.WriteLine("  PRIMARY KEY (`ID`,`locale`),");
+                output.WriteLine("  INDEX `idx_locale`(`locale`)");
             }
 
-            output.WriteLine(") ENGINE=MyISAM DEFAULT CHARSET=utf8;");
+            output.WriteLine(") ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
             output.WriteLine("/*!40101 SET character_set_client = @saved_cs_client */;");
             output.WriteLine();
             output.WriteLine("--");
@@ -227,6 +230,15 @@ namespace WowClientDB2MySQLTableGenerator
             cppBuilder.Nonbreaking().Append("\", CONNECTION_SYNCH);");
             hotfixesCpp.WriteLine(cppBuilder.Finalize());
             hotfixesH.WriteLine($"    HOTFIX_SEL_{structure.GetTableName().ToUpperInvariant()},");
+            if (!structure.IsLocale)
+            {
+                if (!structure.GetTableName().IsSqlKeyword())
+                    hotfixesCpp.WriteLine($"    PREPARE_MAX_ID_STMT(HOTFIX_SEL_{structure.GetTableName().ToUpperInvariant()}, \"SELECT MAX(ID) + 1 FROM {structure.GetTableName()}\", CONNECTION_SYNCH);");
+                else
+                    hotfixesCpp.WriteLine($"    PREPARE_MAX_ID_STMT(HOTFIX_SEL_{structure.GetTableName().ToUpperInvariant()}, \"SELECT MAX(ID) + 1 FROM `{structure.GetTableName()}`\", CONNECTION_SYNCH);");
+
+                hotfixesH.WriteLine($"    HOTFIX_SEL_{structure.GetTableName().ToUpperInvariant()}_MAX_ID,");
+            }
 
             if (!structure.IsLocale)
             {
