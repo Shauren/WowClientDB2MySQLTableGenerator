@@ -22,7 +22,7 @@ namespace WowClientDB2MySQLTableGenerator
         public string FileName { get; set; }
         public List<CStructureInfo> Structures { get; set; } = new List<CStructureInfo>();
 
-        private StringBuilder CommonTypes = new StringBuilder()
+        private readonly StringBuilder CommonTypes = new StringBuilder()
             .AppendLine("struct int64 { };")
             .AppendLine("struct int32 { };")
             .AppendLine("struct int16 { };")
@@ -31,7 +31,7 @@ namespace WowClientDB2MySQLTableGenerator
             .AppendLine("struct uint32 { };")
             .AppendLine("struct uint16 { };")
             .AppendLine("struct uint8 { };")
-            .AppendLine("struct LocalizedString;")
+            .AppendLine("struct LocalizedString { };")
             .AppendLine("struct DBCPosition2D { float X, Y; };")
             .AppendLine("struct DBCPosition3D { float X, Y, Z; };")
             .AppendLine("namespace Trinity { template<typename T> struct RaceMask { }; }")
@@ -68,8 +68,7 @@ namespace WowClientDB2MySQLTableGenerator
                 }
             };
 
-            CXTranslationUnit translationUnit;
-            var result = parseTranslationUnit2(index, FileName, args, args.Length, unsavedFiles, (uint)unsavedFiles.Length, (uint)CXTranslationUnit_Flags.CXTranslationUnit_SkipFunctionBodies, out translationUnit);
+            var result = parseTranslationUnit2(index, FileName, args, args.Length, unsavedFiles, (uint)unsavedFiles.Length, (uint)CXTranslationUnit_Flags.CXTranslationUnit_SkipFunctionBodies, out CXTranslationUnit translationUnit);
             if (result != CXErrorCode.CXError_Success)
                 return;
 
@@ -124,7 +123,7 @@ namespace WowClientDB2MySQLTableGenerator
             return CXChildVisitResult.CXChildVisit_Continue;
         }
 
-        public CXChildVisitResult VisitField(CXCursor cursor, CXCursor parent, IntPtr data)
+        public static CXChildVisitResult VisitField(CXCursor cursor, CXCursor parent, IntPtr data)
         {
             if (clang.getCursorKind(cursor) != CXCursorKind.CXCursor_FieldDecl)
                 return CXChildVisitResult.CXChildVisit_Continue;
@@ -143,7 +142,7 @@ namespace WowClientDB2MySQLTableGenerator
             return CXChildVisitResult.CXChildVisit_Continue;
         }
 
-        public (CXType Type, long ArraySize) ExtractFieldType(CXCursor cursor)
+        public static (CXType Type, long ArraySize) ExtractFieldType(CXCursor cursor)
         {
             var cxType = clang.getCursorType(cursor);
             var arraySize = clang.getArraySize(cxType);

@@ -1,16 +1,13 @@
-﻿using System.Text;
-using System;
+﻿using System;
+using System.Text;
 
 namespace WowClientDB2MySQLTableGenerator
 {
     public sealed class LimitedLineLengthStringBuilder
     {
-        private StringBuilder _builder;
-        private StringBuilder _lineBuffer;
-        public int Length
-        {
-            get { return _builder.Length + _lineBuffer.Length; }
-        }
+        private readonly StringBuilder _builder;
+        private readonly StringBuilder _lineBuffer;
+        public int Length => _builder.Length + _lineBuffer.Length;
         private bool _finalized;
         private bool _ignoreLimit;
         public int LineLength { get; set; }

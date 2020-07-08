@@ -33,7 +33,7 @@ namespace WowClientDB2MySQLTableGenerator
 
         public CStructureInfo CreateLocaleTable()
         {
-            var stringFields = Members.Where(m => m.FormattedTypeName == "LocalizedString*")
+            var stringFields = Members.Where(m => m.FormattedTypeName.StartsWith("LocalizedString"))
                 .Select(m =>
                 {
                     var m2 = new CStructureMemberInfo()

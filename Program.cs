@@ -20,6 +20,7 @@ namespace WowClientDB2MySQLTableGenerator
             { "uint8", "tinyint(3) unsigned NOT NULL DEFAULT '0'" },
             { "int8", "tinyint(4) NOT NULL DEFAULT '0'" },
             { "float", "float NOT NULL DEFAULT '0'"},
+            { "LocalizedString", "text" },
             { "LocalizedString*", "text" },
             { "char*", "text" },
             { "char[4]", "varchar(4) NOT NULL"},
@@ -38,20 +39,21 @@ namespace WowClientDB2MySQLTableGenerator
             { "uint8", "FT_BYTE" },
             { "int8", "FT_BYTE" },
             { "float", "FT_FLOAT"},
+            { "LocalizedString", "FT_STRING" },
             { "LocalizedString*", "FT_STRING" },
             { "char*", "FT_STRING_NOT_LOCALIZED" },
             { "uint64", "FT_LONG" },
             { "int64", "FT_LONG" }
         };
 
-        public static void Main(string[] args)
+        public static void Main()
         {
             _parser = new HeaderParser() { FileName = "DB2Structure.h" };
             _parser.Parse();
-            using (var hotfixesSql = new StreamWriter($"{DateTime.Now.ToString("yyyy_MM_dd")}_00_hotfixes.sql"))
-            using (var hotfixesCpp = new StreamWriter($"{DateTime.Now.ToString("yyyy_MM_dd")}_HotfixDatabase.cpp"))
-            using (var hotfixesH = new StreamWriter($"{DateTime.Now.ToString("yyyy_MM_dd")}_HotfixDatabase.h"))
-            using (var infoH = new StreamWriter($"{DateTime.Now.ToString("yyyy_MM_dd")}_DB2LoadInfo.h"))
+            using (var hotfixesSql = new StreamWriter($"{DateTime.Now:yyyy_MM_dd}_00_hotfixes.sql"))
+            using (var hotfixesCpp = new StreamWriter($"{DateTime.Now:yyyy_MM_dd}_HotfixDatabase.cpp"))
+            using (var hotfixesH = new StreamWriter($"{DateTime.Now:yyyy_MM_dd}_HotfixDatabase.h"))
+            using (var infoH = new StreamWriter($"{DateTime.Now:yyyy_MM_dd}_DB2LoadInfo.h"))
             {
                 WriteLicense(hotfixesCpp);
                 hotfixesCpp.WriteLine("#include \"HotfixDatabase.h\"");
@@ -59,12 +61,12 @@ namespace WowClientDB2MySQLTableGenerator
                 hotfixesCpp.WriteLine();
                 hotfixesCpp.WriteLine("// Force max id statements to appear exactly right after normal data fetch statement");
                 hotfixesCpp.WriteLine("#define PREPARE_MAX_ID_STMT(stmtBase, sql, con) \\");
-                hotfixesCpp.WriteLine("    static_assert(stmtBase + 1 == stmtBase##_MAX_ID, \"Invalid prepared statement index for \" #stmtBase \"_MAX_ID\"); \\");
+                hotfixesCpp.WriteLine("    static_assert(stmtBase + HOTFIX_MAX_ID_STMT_OFFSET == stmtBase##_MAX_ID, \"Invalid prepared statement index for \" #stmtBase \"_MAX_ID\"); \\");
                 hotfixesCpp.WriteLine("    PrepareStatement(stmtBase##_MAX_ID, sql, con);");
                 hotfixesCpp.WriteLine();
                 hotfixesCpp.WriteLine("// Force locale statements to be right after max id fetch statement");
                 hotfixesCpp.WriteLine("#define PREPARE_LOCALE_STMT(stmtBase, sql, con) \\");
-                hotfixesCpp.WriteLine("    static_assert(stmtBase + 2 == stmtBase##_LOCALE, \"Invalid prepared statement index for \" #stmtBase \"_LOCALE\"); \\");
+                hotfixesCpp.WriteLine("    static_assert(stmtBase + HOTFIX_LOCALE_STMT_OFFSET == stmtBase##_LOCALE, \"Invalid prepared statement index for \" #stmtBase \"_LOCALE\"); \\");
                 hotfixesCpp.WriteLine("    PrepareStatement(stmtBase##_LOCALE, sql, con);");
                 hotfixesCpp.WriteLine();
                 hotfixesCpp.WriteLine("void HotfixDatabaseConnection::DoPrepareStatements()");
@@ -114,6 +116,9 @@ namespace WowClientDB2MySQLTableGenerator
                 hotfixesH.WriteLine("");
                 hotfixesH.WriteLine("    MAX_HOTFIXDATABASE_STATEMENTS");
                 hotfixesH.WriteLine("};");
+                hotfixesH.WriteLine("");
+                hotfixesH.WriteLine("uint32 constexpr HOTFIX_MAX_ID_STMT_OFFSET = 1;");
+                hotfixesH.WriteLine("uint32 constexpr HOTFIX_LOCALE_STMT_OFFSET = 2;");
                 hotfixesH.WriteLine("");
                 hotfixesH.WriteLine("class TC_DATABASE_API HotfixDatabaseConnection : public MySQLConnection");
                 hotfixesH.WriteLine("{");
@@ -205,16 +210,35 @@ namespace WowClientDB2MySQLTableGenerator
             else
                 cppBuilder.Append($" FROM `{structure.GetTableName()}`");
 
+            cppBuilder.Append(" WHERE (`VerifiedBuild` > 0) = ?");
+
             if (!structure.IsLocale)
-                output.WriteLine($"  PRIMARY KEY (`ID`)");
+                output.WriteLine($"  PRIMARY KEY (`ID`,`VerifiedBuild`)");
             else
             {
-                cppBuilder.Append(" WHERE locale = ?");
-                output.WriteLine("  PRIMARY KEY (`ID`,`locale`),");
-                output.WriteLine("  INDEX `idx_locale`(`locale`)");
+                cppBuilder.Append(" AND locale = ?");
+                output.WriteLine("  PRIMARY KEY (`ID`,`locale`,`VerifiedBuild`)");
             }
 
-            output.WriteLine(") ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+            output.Write(") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            if (!structure.IsLocale)
+                output.WriteLine(";");
+            else
+            {
+                output.WriteLine();
+                output.WriteLine("/*!50500 PARTITION BY LIST  COLUMNS(locale)");
+                output.WriteLine("(PARTITION deDE VALUES IN ('deDE') ENGINE = InnoDB,");
+                output.WriteLine(" PARTITION esES VALUES IN ('esES') ENGINE = InnoDB,");
+                output.WriteLine(" PARTITION esMX VALUES IN ('esMX') ENGINE = InnoDB,");
+                output.WriteLine(" PARTITION frFR VALUES IN ('frFR') ENGINE = InnoDB,");
+                output.WriteLine(" PARTITION itIT VALUES IN ('itIT') ENGINE = InnoDB,");
+                output.WriteLine(" PARTITION koKR VALUES IN ('koKR') ENGINE = InnoDB,");
+                output.WriteLine(" PARTITION ptBR VALUES IN ('ptBR') ENGINE = InnoDB,");
+                output.WriteLine(" PARTITION ruRU VALUES IN ('ruRU') ENGINE = InnoDB,");
+                output.WriteLine(" PARTITION zhCN VALUES IN ('zhCN') ENGINE = InnoDB,");
+                output.WriteLine(" PARTITION zhTW VALUES IN ('zhTW') ENGINE = InnoDB) */;");
+            }
+
             output.WriteLine("/*!40101 SET character_set_client = @saved_cs_client */;");
             output.WriteLine();
             output.WriteLine("--");
@@ -256,12 +280,10 @@ namespace WowClientDB2MySQLTableGenerator
         {
             var arraySize = member.ArraySize;
 
-            string typeInfo;
-            if (!MySQLTypeMap.TryGetValue(member.FormattedTypeName, out typeInfo))
+            if (!MySQLTypeMap.TryGetValue(member.FormattedTypeName, out string typeInfo))
                 typeInfo = "ERROR TYPE" + member.TypeName;
 
-            string @enum;
-            if (!DbcFormatEnumTypeMap.TryGetValue(member.FormattedTypeName, out @enum))
+            if (!DbcFormatEnumTypeMap.TryGetValue(member.FormattedTypeName, out string @enum))
                 @enum = "FT_FUCK_YOU";
 
             if (member.TypeName == "flag128")
