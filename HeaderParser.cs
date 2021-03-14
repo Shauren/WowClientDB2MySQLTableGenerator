@@ -99,6 +99,8 @@ namespace WowClientDB2MySQLTableGenerator
                 .Replace("WMO", "Wmo")
                 .Replace("AddOn", "Addon")
                 .Replace("LFG", "Lfg")
+                .Replace("POI", "Poi")
+                .Replace("UI", "Ui")
                 .Replace("_", "");
 
             var suffixIndex = structure.NormalizedName.LastIndexOf("Entry");
