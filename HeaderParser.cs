@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace WowClientDB2MySQLTableGenerator
 {
@@ -43,12 +44,17 @@ namespace WowClientDB2MySQLTableGenerator
             .AppendLine("enum ChrCustomizationReqFlag { };")
             .AppendLine("enum ChrRacesFlag { };")
             .AppendLine("enum ContentTuningFlag { };")
+            .AppendLine("enum CreatureModelDataFlags { };")
             .AppendLine("enum CriteriaTreeFlags { };")
             .AppendLine("enum FriendshipReputationFlags { };")
+            .AppendLine("enum PhaseEntryFlags { };")
             .AppendLine("enum SkillLineAbilityFlags { };")
             .AppendLine("enum SpellEffectAttributes { };")
+            .AppendLine("enum SpellItemEnchantmentFlags { };")
             .AppendLine("enum SpellShapeshiftFormFlags { };")
+            .AppendLine("enum SummonPropertiesFlags { };")
             .AppendLine("enum UiMapFlag { };")
+            .AppendLine("enum UnitConditionFlags { };")
             .AppendLine("enum VehicleSeatFlags {};")
             .AppendLine("enum VehicleSeatFlagsB {};")
             .AppendLine("#define MAX_ITEM_PROTO_FLAGS 4")
@@ -56,6 +62,8 @@ namespace WowClientDB2MySQLTableGenerator
             .AppendLine("#define MAX_ITEM_PROTO_SOCKETS 3")
             .AppendLine("#define MAX_ITEM_PROTO_STATS 10")
             .AppendLine("#define MAX_SPELL_AURA_INTERRUPT_FLAGS 2");
+
+        private readonly Regex StdArrayRegex = new Regex(@"^[\s]*std::array<([^,]+), *([^>]+)> ([^;]+)+", RegexOptions.Multiline | RegexOptions.ECMAScript);
 
         public void Parse()
         {
@@ -70,7 +78,7 @@ namespace WowClientDB2MySQLTableGenerator
             // prepare input file
             // comment out existing includes
             // append required typedefs
-            var hdr = CommonTypes.Append(File.ReadAllText(FileName).Replace("#include", "//#include")).ToString();
+            var hdr = CommonTypes.Append(StdArrayRegex.Replace(File.ReadAllText(FileName).Replace("#include", "//#include"), "$1 $3[$2]")).ToString();
 
             var unsavedFiles = new CXUnsavedFile[]
             {
