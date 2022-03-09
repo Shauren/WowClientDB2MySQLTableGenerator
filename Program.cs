@@ -364,6 +364,7 @@ namespace WowClientDB2MySQLTableGenerator
                 case "ORDER":
                 case "SYSTEM":
                 case "RANK":
+                case "TEXT":
                     return true;
             }
 
