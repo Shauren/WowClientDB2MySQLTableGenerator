@@ -113,6 +113,10 @@ namespace WowClientDB2MySQLTableGenerator
 
             var structure = new CStructureInfo();
             structure.Name = clang.getCursorSpelling(cursor).ToString();
+            var suffixIndex = structure.Name.LastIndexOf("Entry", StringComparison.Ordinal);
+            if (suffixIndex != -1)
+                structure.Name = structure.Name.Remove(suffixIndex);
+
             structure.NormalizedName = structure.Name
                 .Replace("GameObject", "Gameobject")
                 .Replace("PvP", "Pvp")
@@ -124,10 +128,6 @@ namespace WowClientDB2MySQLTableGenerator
                 .Replace("POI", "Poi")
                 .Replace("UI", "Ui")
                 .Replace("_", "");
-
-            var suffixIndex = structure.NormalizedName.LastIndexOf("Entry");
-            if (suffixIndex != -1)
-                structure.NormalizedName = structure.NormalizedName.Remove(suffixIndex);
 
             var handle = GCHandle.Alloc(structure);
             clang.visitChildren(cursor, VisitField, new CXClientData(GCHandle.ToIntPtr(handle)));

@@ -268,7 +268,7 @@ namespace WowClientDB2MySQLTableGenerator
             {
                 infoH.Write(infoBuilder.ToString());
                 infoH.WriteLine("        };");
-                infoH.WriteLine($"        static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, {structure.Name.Replace("Entry", "")}Meta::Instance(), HOTFIX_SEL_{structure.GetTableName().ToUpperInvariant().Replace("_LOCALE", "")});");
+                infoH.WriteLine($"        static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, {structure.Name}Meta::Instance(), HOTFIX_SEL_{structure.GetTableName().ToUpperInvariant().Replace("_LOCALE", "")});");
                 infoH.WriteLine("        return &loadInfo;");
                 infoH.WriteLine("    }");
                 infoH.WriteLine("};");
