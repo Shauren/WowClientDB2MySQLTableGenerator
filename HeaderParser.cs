@@ -119,6 +119,7 @@ namespace WowClientDB2MySQLTableGenerator
 
             structure.NormalizedName = structure.Name
                 .Replace("GameObject", "Gameobject")
+                .Replace("NPC", "Npc")
                 .Replace("PvP", "Pvp")
                 .Replace("PVP", "Pvp")
                 .Replace("QuestXP", "QuestXp")

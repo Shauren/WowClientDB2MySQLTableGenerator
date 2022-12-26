@@ -191,18 +191,21 @@ namespace WowClientDB2MySQLTableGenerator
                 hotfixesH.WriteLine();
                 infoH.WriteLine($"struct {structure.NormalizedName}LoadInfo");
                 infoH.WriteLine("{");
-                infoH.WriteLine("    static DB2LoadInfo const* Instance()");
-                infoH.WriteLine("    {");
-                infoH.WriteLine($"        static constexpr DB2FieldMeta fields[] =");
-                infoH.WriteLine("        {");
             }
             else
                 cppBuilder.Append($"    PREPARE_LOCALE_STMT(HOTFIX_SEL_{structure.GetTableName().ToUpperInvariant().Replace("_LOCALE", "")}");
 
             cppBuilder.Append(", \"SELECT ");
 
+            var memberCount = 0;
             foreach (var member in structure.Members)
-                DumpStructureMember(output, cppBuilder, infoBuilder, member);
+                memberCount += DumpStructureMember(output, cppBuilder, infoBuilder, member);
+
+            if (!structure.IsLocale)
+            {
+                infoH.WriteLine($"    static constexpr DB2FieldMeta Fields[{memberCount}] =");
+                infoH.WriteLine("    {");
+            }
 
             cppBuilder.Remove(cppBuilder.Length - 2, 2);
             if (!structure.GetTableName().IsSqlKeyword())
@@ -267,17 +270,17 @@ namespace WowClientDB2MySQLTableGenerator
             if (!structure.IsLocale)
             {
                 infoH.Write(infoBuilder.ToString());
-                infoH.WriteLine("        };");
-                infoH.WriteLine($"        static DB2LoadInfo const loadInfo(&fields[0], std::size(fields), {structure.Name}Meta::Instance(), HOTFIX_SEL_{structure.GetTableName().ToUpperInvariant().Replace("_LOCALE", "")});");
-                infoH.WriteLine("        return &loadInfo;");
-                infoH.WriteLine("    }");
+                infoH.WriteLine("    };");
+                infoH.WriteLine();
+                infoH.WriteLine($"    static constexpr DB2LoadInfo Instance{{ Fields, {memberCount}, &{structure.Name}Meta::Instance, HOTFIX_SEL_{structure.GetTableName().ToUpperInvariant().Replace("_LOCALE", "")} }};");
                 infoH.WriteLine("};");
                 infoH.WriteLine();
             }
         }
 
-        private static void DumpStructureMember(StreamWriter output, LimitedLineLengthStringBuilder query, StringBuilder infoH, CStructureMemberInfo member)
+        private static int DumpStructureMember(StreamWriter output, LimitedLineLengthStringBuilder query, StringBuilder infoH, CStructureMemberInfo member)
         {
+            var memberCount = 0;
             var arraySize = member.ArraySize;
 
             if (!MySQLTypeMap.TryGetValue(member.FormattedTypeName, out string typeInfo))
@@ -307,31 +310,34 @@ namespace WowClientDB2MySQLTableGenerator
 
                 if (!typeInfo.Contains("ERROR"))
                 {
-                    DumpStructureMemberName(output, query, infoH, memberName, typeInfo, member.FormattedTypeName, @enum);
+                    memberCount += DumpStructureMemberName(output, query, infoH, memberName, typeInfo, member.FormattedTypeName, @enum);
                 }
                 else
                 {
                     switch (member.TypeName)
                     {
                         case "DBCPosition3D":
-                            DumpStructureMemberName(output, query, infoH, memberName + "X", MySQLTypeMap["float"], member.FormattedTypeName, DbcFormatEnumTypeMap["float"]);
-                            DumpStructureMemberName(output, query, infoH, memberName + "Y", MySQLTypeMap["float"], member.FormattedTypeName, DbcFormatEnumTypeMap["float"]);
-                            DumpStructureMemberName(output, query, infoH, memberName + "Z", MySQLTypeMap["float"], member.FormattedTypeName, DbcFormatEnumTypeMap["float"]);
+                            memberCount += DumpStructureMemberName(output, query, infoH, memberName + "X", MySQLTypeMap["float"], member.FormattedTypeName, DbcFormatEnumTypeMap["float"]);
+                            memberCount += DumpStructureMemberName(output, query, infoH, memberName + "Y", MySQLTypeMap["float"], member.FormattedTypeName, DbcFormatEnumTypeMap["float"]);
+                            memberCount += DumpStructureMemberName(output, query, infoH, memberName + "Z", MySQLTypeMap["float"], member.FormattedTypeName, DbcFormatEnumTypeMap["float"]);
                             break;
                         case "DBCPosition2D":
-                            DumpStructureMemberName(output, query, infoH, memberName + "X", MySQLTypeMap["float"], member.FormattedTypeName, DbcFormatEnumTypeMap["float"]);
-                            DumpStructureMemberName(output, query, infoH, memberName + "Y", MySQLTypeMap["float"], member.FormattedTypeName, DbcFormatEnumTypeMap["float"]);
+                            memberCount += DumpStructureMemberName(output, query, infoH, memberName + "X", MySQLTypeMap["float"], member.FormattedTypeName, DbcFormatEnumTypeMap["float"]);
+                            memberCount += DumpStructureMemberName(output, query, infoH, memberName + "Y", MySQLTypeMap["float"], member.FormattedTypeName, DbcFormatEnumTypeMap["float"]);
                             break;
                         default:
                             output.WriteLine($"  `{memberName}` ERROR TYPE {member.TypeName},");
-                            infoH.AppendLine($"            {{ false, {@enum}, \"{memberName}\" }},");
+                            infoH.AppendLine($"        {{ false, {@enum}, \"{memberName}\" }},");
+                            ++memberCount;
                             break;
                     }
                 }
             }
+
+            return memberCount;
         }
 
-        private static void DumpStructureMemberName(StreamWriter output, LimitedLineLengthStringBuilder query, StringBuilder fieldsMetaH, string memberName, string typeName, string cpptype, string @enum)
+        private static int DumpStructureMemberName(StreamWriter output, LimitedLineLengthStringBuilder query, StringBuilder fieldsMetaH, string memberName, string typeName, string cpptype, string @enum)
         {
             output.WriteLine($"  `{memberName}` {typeName},");
             if (memberName != "VerifiedBuild" && memberName != "locale")
@@ -341,8 +347,11 @@ namespace WowClientDB2MySQLTableGenerator
                 else
                     query.Append($"`{memberName}`, ");
 
-                fieldsMetaH.AppendLine($"            {{ {SignedIntRegex.IsMatch(cpptype).ToString().ToLowerInvariant()}, {@enum}, \"{memberName}\" }},");
+                fieldsMetaH.AppendLine($"        {{ {SignedIntRegex.IsMatch(cpptype).ToString().ToLowerInvariant()}, {@enum}, \"{memberName}\" }},");
+                return 1;
             }
+
+            return 0;
         }
 
         private static bool IsSqlKeyword(this string str)
