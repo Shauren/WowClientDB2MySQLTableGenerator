@@ -61,13 +61,13 @@ namespace WowClientDB2MySQLTableGenerator
                 hotfixesCpp.WriteLine();
                 hotfixesCpp.WriteLine("// Force max id statements to appear exactly right after normal data fetch statement");
                 hotfixesCpp.WriteLine("#define PREPARE_MAX_ID_STMT(stmtBase, sql, con) \\");
-                hotfixesCpp.WriteLine("    static_assert(stmtBase + HOTFIX_MAX_ID_STMT_OFFSET == stmtBase##_MAX_ID, \"Invalid prepared statement index for \" #stmtBase \"_MAX_ID\"); \\");
-                hotfixesCpp.WriteLine("    PrepareStatement(stmtBase##_MAX_ID, sql, con);");
+                hotfixesCpp.WriteLine("    static_assert((stmtBase) + HOTFIX_MAX_ID_STMT_OFFSET == stmtBase##_MAX_ID, \"Invalid prepared statement index for \" #stmtBase \"_MAX_ID\"); \\");
+                hotfixesCpp.WriteLine("    PrepareStatement(stmtBase##_MAX_ID, sql, con)");
                 hotfixesCpp.WriteLine();
                 hotfixesCpp.WriteLine("// Force locale statements to be right after max id fetch statement");
                 hotfixesCpp.WriteLine("#define PREPARE_LOCALE_STMT(stmtBase, sql, con) \\");
-                hotfixesCpp.WriteLine("    static_assert(stmtBase + HOTFIX_LOCALE_STMT_OFFSET == stmtBase##_LOCALE, \"Invalid prepared statement index for \" #stmtBase \"_LOCALE\"); \\");
-                hotfixesCpp.WriteLine("    PrepareStatement(stmtBase##_LOCALE, sql, con);");
+                hotfixesCpp.WriteLine("    static_assert((stmtBase) + HOTFIX_LOCALE_STMT_OFFSET == stmtBase##_LOCALE, \"Invalid prepared statement index for \" #stmtBase \"_LOCALE\"); \\");
+                hotfixesCpp.WriteLine("    PrepareStatement(stmtBase##_LOCALE, sql, con)");
                 hotfixesCpp.WriteLine();
                 hotfixesCpp.WriteLine("void HotfixDatabaseConnection::DoPrepareStatements()");
                 hotfixesCpp.WriteLine("{");
@@ -374,6 +374,7 @@ namespace WowClientDB2MySQLTableGenerator
                 case "SYSTEM":
                 case "RANK":
                 case "TEXT":
+                case "FUNCTION":
                     return true;
             }
 
