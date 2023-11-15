@@ -12,20 +12,20 @@ namespace WowClientDB2MySQLTableGenerator
 
         private static readonly Dictionary<string, string> MySQLTypeMap = new Dictionary<string, string>()
         {
-            { "uint32", "int(10) unsigned NOT NULL DEFAULT '0'" },
-            { "unionAssetNameAlias", "int(10) NOT NULL DEFAULT '0'" },
-            { "int32", "int(11) NOT NULL DEFAULT '0'" },
-            { "uint16", "smallint(5) unsigned NOT NULL DEFAULT '0'" },
-            { "int16", "smallint(6) NOT NULL DEFAULT '0'" },
-            { "uint8", "tinyint(3) unsigned NOT NULL DEFAULT '0'" },
-            { "int8", "tinyint(4) NOT NULL DEFAULT '0'" },
+            { "uint32", "int unsigned NOT NULL DEFAULT '0'" },
+            { "unionAssetNameAlias", "int NOT NULL DEFAULT '0'" },
+            { "int32", "int NOT NULL DEFAULT '0'" },
+            { "uint16", "smallint unsigned NOT NULL DEFAULT '0'" },
+            { "int16", "smallint NOT NULL DEFAULT '0'" },
+            { "uint8", "tinyint unsigned NOT NULL DEFAULT '0'" },
+            { "int8", "tinyint NOT NULL DEFAULT '0'" },
             { "float", "float NOT NULL DEFAULT '0'"},
             { "LocalizedString", "text" },
             { "LocalizedString*", "text" },
             { "char*", "text" },
             { "char[4]", "varchar(4) NOT NULL"},
-            { "uint64", "bigint(20) unsigned NOT NULL DEFAULT '0'" },
-            { "int64", "bigint(20) NOT NULL DEFAULT '0'" }
+            { "uint64", "bigint unsigned NOT NULL DEFAULT '0'" },
+            { "int64", "bigint NOT NULL DEFAULT '0'" }
         };
 
         private static readonly Regex SignedIntRegex = new Regex("^(int[0-9]{1,2})|(unionAssetNameAlias)|(flag128)$", RegexOptions.Compiled);
