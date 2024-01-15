@@ -101,11 +101,7 @@ namespace WowClientDB2MySQLTableGenerator
 
                 hotfixesCpp.WriteLine("}");
                 hotfixesCpp.WriteLine();
-                hotfixesCpp.WriteLine("HotfixDatabaseConnection::HotfixDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo)");
-                hotfixesCpp.WriteLine("{");
-                hotfixesCpp.WriteLine("}");
-                hotfixesCpp.WriteLine();
-                hotfixesCpp.WriteLine("HotfixDatabaseConnection::HotfixDatabaseConnection(ProducerConsumerQueue<SQLOperation*>* q, MySQLConnectionInfo& connInfo) : MySQLConnection(q, connInfo)");
+                hotfixesCpp.WriteLine("HotfixDatabaseConnection::HotfixDatabaseConnection(MySQLConnectionInfo& connInfo, ConnectionFlags connectionFlags) : MySQLConnection(connInfo, connectionFlags)");
                 hotfixesCpp.WriteLine("{");
                 hotfixesCpp.WriteLine("}");
                 hotfixesCpp.WriteLine();
@@ -125,9 +121,7 @@ namespace WowClientDB2MySQLTableGenerator
                 hotfixesH.WriteLine("public:");
                 hotfixesH.WriteLine("    typedef HotfixDatabaseStatements Statements;");
                 hotfixesH.WriteLine("");
-                hotfixesH.WriteLine("    //- Constructors for sync and async connections");
-                hotfixesH.WriteLine("    HotfixDatabaseConnection(MySQLConnectionInfo& connInfo);");
-                hotfixesH.WriteLine("    HotfixDatabaseConnection(ProducerConsumerQueue<SQLOperation*>* q, MySQLConnectionInfo& connInfo);");
+                hotfixesH.WriteLine("    HotfixDatabaseConnection(MySQLConnectionInfo& connInfo, ConnectionFlags connectionFlags);");
                 hotfixesH.WriteLine("    ~HotfixDatabaseConnection();");
                 hotfixesH.WriteLine("");
                 hotfixesH.WriteLine("    //- Loads database type specific prepared statements");
