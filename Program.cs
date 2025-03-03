@@ -89,11 +89,12 @@ namespace WowClientDB2MySQLTableGenerator
                 hotfixesH.WriteLine("    */");
 
                 WriteLicense(infoH);
-                infoH.WriteLine("#ifndef DB2LoadInfo_h__");
-                infoH.WriteLine("#define DB2LoadInfo_h__");
+                infoH.WriteLine("#ifndef TRINITYCORE_DB2_LOAD_INFO_H");
+                infoH.WriteLine("#define TRINITYCORE_DB2_LOAD_INFO_H");
                 infoH.WriteLine("");
                 infoH.WriteLine("#include \"DB2DatabaseLoader.h\"");
                 infoH.WriteLine("#include \"DB2Metadata.h\"");
+                infoH.WriteLine("#include \"HotfixDatabase.h\"");
                 infoH.WriteLine("");
 
                 foreach (var structure in _parser.Structures)
@@ -130,7 +131,7 @@ namespace WowClientDB2MySQLTableGenerator
                 hotfixesH.WriteLine("");
                 hotfixesH.WriteLine("#endif");
 
-                infoH.WriteLine("#endif // DB2LoadInfo_h__");
+                infoH.WriteLine("#endif // TRINITYCORE_DB2_LOAD_INFO_H");
             }
         }
 
@@ -341,7 +342,7 @@ namespace WowClientDB2MySQLTableGenerator
                 else
                     query.Append($"`{memberName}`, ");
 
-                fieldsMetaH.AppendLine($"        {{ {SignedIntRegex.IsMatch(cpptype).ToString().ToLowerInvariant()}, {@enum}, \"{memberName}\" }},");
+                fieldsMetaH.AppendLine($"        {{ .IsSigned = {SignedIntRegex.IsMatch(cpptype).ToString().ToLowerInvariant()}, .Type = {@enum}, .Name = \"{memberName}\" }},");
                 return 1;
             }
 
